@@ -1,0 +1,35 @@
+@startuml
+title LottryAPI Sequence Diagram
+skinparam actorStyle Hollow
+actor Client as "App/Browser"
+participant "API Server" as Server
+database "DB" as DB
+autonumber
+
+Client -> Server: POST \n{\n  "serialCode": "1234567890",\n  "userId": "user123"\n}
+note right
+    serialCode should be 10 digits long.
+    userId should be alphanumeric.
+end note
+Server -> Server: Input Validation
+alt Invalid Input
+    Server --> Client: {\n  "error code" : 400 Bad Request \n "errorMessage": "Invalid input"\n}
+else Valid Input
+    Server -> DB: SELECT COUNT(serialCode) FROM tableX WHERE serialCode = '1234567890' AND userId = 'user123'
+    note right: Save SerialCode and UserId in DB
+    DB --> Server: count
+    alt count > 0 (Already Used)
+        Server --> Client: {\n  "error code" : 409 Conflict \n "errorMessage": "Serial code already used"\n}
+    else count = 0 (Not Used)
+        Server -> DB: INSERT INTO tableX (serialCode, userId)
+        note right: Add serialCode and userId in TableX
+        Server -> Server: Generate random number (0-99)
+        note right: If random < 3, WIN (3% chance); else LOSE (97% chance)
+        alt random < 3
+            Server --> Client: {\n "code" : 200 OK "result": "WIN"\n}
+        else random >= 3
+            Server --> Client: {\n "code" : 200 OK "result": "LOSE"\n}
+        end
+    end
+end
+@enduml
