@@ -16,13 +16,13 @@ alt Invalid Input
     Server --> Client: {\n  "error code" : 400 Bad Request \n "errorMessage": "Invalid input"\n}
 else Valid Input
     Server -> DB: SELECT COUNT(serialCode) FROM tableX WHERE serialCode = '1234567890' AND userId = 'user123'
-    note right: Check if this SerialCode was used by this UserId before
+    note right: Save SerialCode and UserId in DB
     DB --> Server: count
     alt count > 0 (Already Used)
         Server --> Client: {\n  "error code" : 409 Conflict \n "errorMessage": "Serial code already used"\n}
     else count = 0 (Not Used)
         Server -> DB: INSERT INTO tableX (serialCode, userId)
-        note right: Save SerialCode and UserId in DB
+        note right: Add serialCode and userId in TableX
         Server -> Server: Generate random number (0-99)
         note right: If random < 3, WIN (3% chance); else LOSE (97% chance)
         alt random < 3
