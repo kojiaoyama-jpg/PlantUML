@@ -1,0 +1,5 @@
+@startuml
+title Test Sequence Diagram
+Ailce -> Bob: Request
+Bob --> Ailce: Response
+@enduml
