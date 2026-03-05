@@ -1,30 +1,34 @@
 @startuml
 title LottryAPI Sequence Diagram
-actor Client as "User"
+skinparam actorStyle Hollow
+actor Client as "App/Browser"
 participant "API Server" as Server
 database "DB" as DB
 autonumber
 
-Client -> Server: Send SerialCode and UserId. 
-note right: Validate SerialCode (10 digits numeric) and UserId (alphanumeric)
-
+Client -> Server: POST \n{\n  "serialCode": "1234567890",\n  "userId": "user123"\n}
+note right
+    serialCode should be 10 digits long.
+    userId should be alphanumeric.
+end note
 Server -> Server: Input Validation
 alt Invalid Input
-    Server --> Client: Error Response
+    Server --> Client: {\n  "error code" : 400 Bad Request \n "errorMessage": "Invalid input"\n}
 else Valid Input
-    Server -> DB: Check If Already Used
+    Server -> DB: SELECT COUNT(serialCode) FROM tableX WHERE serialCode = '1234567890' AND userId = 'user123'
     note right: Check if this SerialCode was used by this UserId before
-    alt Already Used
-        Server --> Client: Error Response
-    else Not Used
-        Server -> DB: Save
+    DB --> Server: count
+    alt count > 0 (Already Used)
+        Server --> Client: {\n  "error code" : 409 Conflict \n "errorMessage": "Serial code already used"\n}
+    else count = 0 (Not Used)
+        Server -> DB: INSERT INTO tableX (serialCode, userId)
         note right: Save SerialCode and UserId in DB
-        Server -> Server: Run Lottery
-        note right: Generate random number, 3% chance to win
-        alt Win (3% chance)
-            Server --> Client: "WIN"
-        else Lose (97% chance)
-            Server --> Client: "LOSE"
+        Server -> Server: Generate random number (0-99)
+        note right: If random < 3, WIN (3% chance); else LOSE (97% chance)
+        alt random < 3
+            Server --> Client: {\n "code" : 200 OK "result": "WIN"\n}
+        else random >= 3
+            Server --> Client: {\n "code" : 200 OK "result": "LOSE"\n}
         end
     end
 end
