@@ -1,0 +1,31 @@
+@startuml
+title LottryAPI Sequence Diagram
+actor Client as "User"
+participant "API Server" as Server
+database "DB" as DB
+autonumber
+
+Client -> Server: Send SerialCode and UserId. 
+note right: Validate SerialCode (10 digits numeric) and UserId (alphanumeric)
+
+Server -> Server: Input Validation
+alt Invalid Input
+    Server --> Client: Error Response
+else Valid Input
+    Server -> DB: Check If Already Used
+    note right: Check if this SerialCode was used by this UserId before
+    alt Already Used
+        Server --> Client: Error Response
+    else Not Used
+        Server -> DB: Save
+        note right: Save SerialCode and UserId in DB
+        Server -> Server: Run Lottery
+        note right: Generate random number, 3% chance to win
+        alt Win (3% chance)
+            Server --> Client: "WIN"
+        else Lose (97% chance)
+            Server --> Client: "LOSE"
+        end
+    end
+end
+@enduml
